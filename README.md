@@ -27,19 +27,18 @@ Press `Esc` at any time to cancel and close the window.
 Add something like this to `keymap.toml`:
 
 ```toml
-{
-  on = "<C-n>",
-  # NOTE: replace this path with a path to wherever you cloned this repo ⤵
-  run = 'shell -- powershell -NoProfile -ExecutionPolicy Bypass -File "%USERPROFILE%\dev\windragon\windragon.ps1" %s',
-  desc = "Drag file(s) out with windragon"
-}
+[[mgr.append_keymap]]
+on = "<C-n>"
+# NOTE: replace this path with a path to wherever the windragon script is ⤵
+run = 'shell -- powershell -NoProfile -ExecutionPolicy Bypass -File "%USERPROFILE%\dev\windragon\windragon.ps1" %s'
+desc = "Drag file(s) out with windragon"
 ```
 
 Select a file (or a few) in yazi, hit `Ctrl+N`, and drag the window that pops up to wherever you want the file to go.
 
 ## Limitations
 
-- Only shows a preview thumbnail for the first file when multiple are passed. 
+- Only shows a preview thumbnail for the first file when multiple are passed.
 - First run compiles a tiny helper DLL and caches it next to the script, so it's a bit slower the very first time you use it.
 
 ## License
