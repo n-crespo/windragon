@@ -7,7 +7,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 
 # P/Invoke for native Win10/11 window polish: rounded corners + dark title bar.
 # Silently no-ops on Windows versions that don't support these attributes.
-Add-Type @"
+$nativeSource = @"
 using System;
 using System.Runtime.InteropServices;
 public static class NativeWindow {
@@ -15,6 +15,25 @@ public static class NativeWindow {
     public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 }
 "@
+
+# Compiling C# costs ~100ms per launch, so compile once to a DLL next to the
+# script and load that on later runs. Bump the version in the name whenever
+# $nativeSource changes so a stale DLL isn't picked up.
+$nativeDll = Join-Path $PSScriptRoot "windragon-native.v0.0.2.dll"
+try
+{
+  if (-not (Test-Path -LiteralPath $nativeDll))
+  {
+    Add-Type -TypeDefinition $nativeSource -OutputAssembly $nativeDll -ErrorAction Stop
+  }
+  Add-Type -Path $nativeDll -ErrorAction Stop
+} catch
+{
+  # Script folder not writable, or a corrupt cache: compile in memory instead.
+  if (-not ("NativeWindow" -as [type]))
+  { Add-Type -TypeDefinition $nativeSource
+  }
+}
 
 function Get-FileThumbnail
 {
@@ -35,7 +54,7 @@ function Get-FileThumbnail
       $bmp.Freeze()
       return $bmp
     } catch
-    { 
+    {
     }
   }
 
@@ -54,7 +73,7 @@ function Get-FileThumbnail
       return $src
     }
   } catch
-  { 
+  {
   }
 
   return $null
@@ -88,7 +107,7 @@ $window.Add_SourceInitialized({
       $dark = 1
       [NativeWindow]::DwmSetWindowAttribute($hwnd, 20, [ref]$dark, 4) | Out-Null
     } catch
-    { 
+    {
     }
   })
 
@@ -96,7 +115,7 @@ $window.Add_SourceInitialized({
 $window.Add_KeyDown({
     param($sender, $e)
     if ($e.Key -eq [System.Windows.Input.Key]::Escape)
-    { $window.Close() 
+    { $window.Close()
     }
   })
 $window.Add_Loaded({ $window.Focus() | Out-Null })
@@ -270,7 +289,7 @@ if ($Files)
       {
         $droppedFiles = $e.Data.GetData([System.Windows.DataFormats]::FileDrop)
         foreach ($f in $droppedFiles)
-        { Write-Output $f 
+        { Write-Output $f
         }
       }
       $window.Close()
